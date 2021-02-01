@@ -1,0 +1,260 @@
+---
+title: "Youtube Video Practice"
+author: "Patrick Chase"
+date: "1/25/2021"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Introduction to ggplot 
+link- https://www.youtube.com/watch?v=UK2FhxMnmjQ 
+
+```{r}
+install.packages("tidyverse")
+library(magrittr)
+library(tidyverse)
+library(ggplot2)
+install.packages("ggplot2")
+data(mpg)
+
+head(mpg)
+
+plot(mpg$displ, mpg$hwy)
+
+
+```
+
+ggplot work 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
+
+```
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
+```
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+```
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class)) +
+  facet_wrap(~ class, nrow = 2) 
+```
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ class, nrow = 2) +
+  labs(
+    title = "Fuel efficiency generally decreases with engine size",
+    caption = "Data from fueleconomy.gov",
+    x="Engine displacement (liters)",
+    y="Highway gas milage (mpg)"
+  )
+```
+
+```{r}
+p1 = ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+## adding facet later 
+
+p1 + facet_wrap( ~ class, nrow = 1)
+p1 + facet_wrap(~ class, nrow = 2)
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue") 
+```
+
+Data workflow + bar plots 
+link https://www.youtube.com/watch?v=k76R7ifcyvs 
+
+```{r}
+head(titanic)
+```
+```{r}
+xtabs(~survived + passengerClass, data=titanic) %>% 
+  prop.table(margin=2)
+```
+group/pipe/summarize
+
+```{r}
+titanic %>% 
+  group_by(sex) %>%
+  summarize(total_count = n(), 
+            mean_age = mean(age),
+            surv_count = sum(survived == 'yes'), 
+            surv_pct = surv_count/total_count
+            )
+```
+```{r}
+titanic %>% 
+  group_by(sex) %>%
+  summarize (mean_age = mean(age), 
+             surv_pct = sum(survived == 'yes')/n())
+```
+Filtering
+```{r}
+titanic %>% 
+  filter(sex == 'female') %>% 
+  group_by(passengerClass) %>%
+  summarize(total_count = n(), 
+            surv_pct = sum(survived == 'yes')/n())
+```
+
+```{r}
+titanic %>% 
+  filter(age < 18) %>% 
+  group_by(passengerClass) %>%
+  summarize(total_count = n(),
+            surv_pct = sum(survived == 'yes')/n())
+```
+
+```{r}
+titanic = titanic %>% 
+  mutate(adult = ifelse(age > 18, '18+', 'under 18')) 
+head(titanic)
+```
+
+```{r}
+titanic %>% 
+  group_by(sex, adult, passengerClass) %>% 
+  summarize(surv_pct = sum(survived == 'yes')/n())
+
+```
+
+Bar Plots
+
+Define data into a data frame d1
+```{r}
+d1 = titanic %>% 
+  group_by(sex) %>% 
+  summarize(surv_pct = sum(survived == 'yes')/n())
+d1
+```
+now use d1 to create bar plot 
+```{r}
+ggplot(data = d1) +
+  geom_col(mapping = aes(x=sex, y=surv_pct))
+
+  
+```
+
+Grouping by 2 variables 
+```{r}
+d2 = titanic %>%
+  group_by(sex, adult) %>%
+  summarize(surv_pct = sum(survived == 'yes')/n())
+d2
+  
+```
+
+Now use d2 to generate a bar plot 
+```{r}
+ggplot(data = d2) +
+  geom_col(mapping = aes(x=adult, y=surv_pct, fill=sex), 
+           position = 'dodge')
+```
+
+Three conditioning variables
+```{r}
+d3 = titanic %>% 
+  group_by(sex, passengerClass, adult) %>%
+  summarize(surv_pct = sum(survived == 'yes')/n())
+
+ggplot(data = d3) + 
+  geom_col(mapping = aes(x=adult, y=surv_pct, fill=sex),
+           position = 'dodge') +
+  facet_wrap(~passengerClass)
+```
+
+3 conditioning variables with pretty labels
+
+```{r}
+d3 = titanic %>% 
+  group_by(sex, passengerClass, adult) %>%
+  summarize(surv_pct = sum(survived == 'yes')/n())
+
+ggplot(data = d3) + 
+  geom_col(mapping = aes(x=adult, y=surv_pct, fill=sex),
+           position = 'dodge') +
+  facet_wrap(~passengerClass) +
+  labs(title = "Survival on the Titanic",
+       y = "Fraction Surviving",
+       x = "Age", 
+       fill = "Sex")
+```
+
+Same information different organization
+```{r}
+ggplot(data = d3) + 
+  geom_col(mapping = aes(x=sex, y=surv_pct, fill=passengerClass),
+          position = 'dodge') +
+  facet_wrap(~adult)
+```
+```{r}
+d4 = titanic %>% 
+  group_by(sex, passengerClass) %>%
+  summarize(mean_age = mean(age))
+d4
+```
+
+```{r}
+ggplot(data = d4) +
+  geom_col(mapping = aes(x=passengerClass, y=mean_age, fill=sex),
+           position = 'dodge')
+```
+
+Visualizing Distributions
+link https://www.youtube.com/watch?v=wFpzPtdIfTg 
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+hist(us_counties$median_income2018)
+```
+
+
+histogram in ggplot2 
+```{r}
+ggplot(data = us_counties) + 
+  geom_histogram(aes(x=median_income2018), binwidth = 2000)
+```
+
+density histogram 
+```{r}
+ggplot(data=us_counties) + 
+  geom_histogram(aes(x=median_income2018, after_stat(density)), binwidth = 2000) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
