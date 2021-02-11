@@ -1,0 +1,11 @@
+---
+title: "Causal Inference Personal Essay and Quiz"
+author: "Patrick Chase"
+date: "1/24/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+This is a test 
