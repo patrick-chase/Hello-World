@@ -1,0 +1,97 @@
+---
+title: "Data Mining Assignment 1"
+author: "Patrick Chase"
+date: "2/5/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(tidyverse)
+library(ggplot2)
+head(GasPrices)
+```
+1A)
+```{r}
+price.comp <- ggplot(GasPrices, aes(x=Competitors, y=Price, color=Competitors)) +
+  geom_boxplot(notch = TRUE) + ggtitle("Price vs Competitors")+
+  theme(plot.title = element_text(hjust = 0.5))
+price.comp
+```
+Given traditional economic theory, if a station has competitors we would expect a lower average price. "Price vs Competitors" provides evidence that this is true. Gas stations with competitors have both an average lower price, as well as a distribution that is lower than those without competitors. 
+
+1B)
+```{r}
+price.inc <- ggplot(data = GasPrices) + 
+  geom_point(mapping = aes(x=Income, y=Price, color = Competitors)) + 
+  ggtitle("Price vs Income") +
+  theme(plot.title = element_text(hjust = 0.5))
+price.inc
+```
+
+The claim that richer areas tend to have higher gas prices seems to be mildly supported by the available data. On my own, I chose to color each observation based on whether or not there were competitors near by, which shows an interesting relationship. There seems to be less competition at the extremes of income. 
+
+1C) 
+
+```{r}
+brand_price <- GasPrices %>% 
+  group_by(Brand) %>%
+  summarize(mean_price = mean(Price))
+brand_price
+
+```
+
+```{r}
+ggplot(data = brand_price) + 
+  geom_col(mapping = aes(x=Brand, y=mean_price), 
+           position = 'dodge') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Average Price by Name")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+The claim that Shell gas stations charge more than others does not seem to be supported by this data. Visually, it appears that shell is charging about the same average price as all the other stations. 
+
+1D) 
+```{r}
+stoplight <- GasPrices %>%
+  group_by(Stoplight) %>% 
+  summarize(mean_price = mean(Price))
+stoplight
+```
+```{r}
+ggplot(data = GasPrices) + 
+  geom_histogram(aes(x=Price), binwidth = .1) + 
+  facet_wrap(~Stoplight) + 
+  ggtitle("Price Distribution Over Stoplight")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+```
+I don't think this visualization supports the claim that gas stations near stoplights charge more for gas. The average price near stoplights is probably higher, however prices that aren't near a stop light have a wider range and a higher max price. 
+
+1E) 
+
+```{r}
+ggplot(data = GasPrices) + 
+  geom_histogram(aes(x=Price), binwidth = .1) + 
+  facet_wrap(~Highway) + 
+  ggtitle("Price Distribution Over Highway")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+I chose to a faceted histogram in order to show the difference in between prices given distance from a highway. Preliminarily, I'd say that there is some evidence that suggests that prices are higher when one is close to a highway. That said, the differeing counts between the two indicate that we may have some selection bias. Our sample of stations near the highway may not be representative and as such should be taken with a grain of salt. 
+
+
+
+2) 
+
+
+
+
+
+
+
+
+
+
+

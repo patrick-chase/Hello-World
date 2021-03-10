@@ -1,0 +1,347 @@
+---
+title: "Data Mining Assignment 1"
+author: "Patrick Chase"
+date: "2/5/2021"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(tidyverse)
+library(ggplot2)
+library(curl)
+GasPrices<-read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/GasPrices.csv")
+head(GasPrices)
+```
+1A)
+```{r}
+price.comp <- ggplot(GasPrices, aes(x=Competitors, y=Price, color=Competitors)) +
+  geom_boxplot(notch = TRUE) + ggtitle("Price vs Competitors")+
+  theme(plot.title = element_text(hjust = 0.5))
+price.comp
+```
+Given traditional economic theory, if a station has competitors we would expect a lower average price. "Price vs Competitors" provides evidence that this is true. Gas stations with competitors have both an average lower price, as well as a distribution that is lower than those without competitors. 
+
+1B)
+```{r}
+price.inc <- ggplot(data = GasPrices) + 
+  geom_point(mapping = aes(x=Income, y=Price, color = Competitors)) + 
+  ggtitle("Price vs Income") +
+  theme(plot.title = element_text(hjust = 0.5))
+price.inc
+```
+
+The claim that richer areas tend to have higher gas prices seems to be mildly supported by the available data. On my own, I chose to color each observation based on whether or not there were competitors near by, which shows an interesting relationship. There seems to be less competition at the extremes of income. 
+
+1C) 
+
+```{r}
+brand_price <- GasPrices %>% 
+  group_by(Brand) %>%
+  summarize(mean_price = mean(Price))
+brand_price
+
+```
+
+```{r}
+ggplot(data = brand_price) + 
+  geom_col(mapping = aes(x=Brand, y=mean_price), 
+           position = 'dodge') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Average Price by Name")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+The claim that Shell gas stations charge more than others does not seem to be supported by this data. Visually, it appears that shell is charging about the same average price as all the other stations. 
+
+1D) 
+```{r}
+stoplight <- GasPrices %>%
+  group_by(Stoplight) %>% 
+  summarize(mean_price = mean(Price))
+stoplight
+```
+```{r}
+ggplot(data = GasPrices) + 
+  geom_histogram(aes(x=Price), binwidth = .1) + 
+  facet_wrap(~Stoplight) + 
+  ggtitle("Price Distribution Over Stoplight")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+```
+I don't think this visualization supports the claim that gas stations near stoplights charge more for gas. The average price near stoplights is probably higher, however prices that aren't near a stop light have a wider range and a higher max price. 
+
+1E) 
+
+```{r}
+ggplot(data = GasPrices) + 
+  geom_histogram(aes(x=Price), binwidth = .1) + 
+  facet_wrap(~Highway) + 
+  ggtitle("Price Distribution Over Highway")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+I chose to generate a faceted histogram in order to show the difference in between prices given distance from a highway. Preliminarily, I'd say that there is some evidence that suggests that prices are higher when one is close to a highway. That said, the differing counts between the two indicate that we may have some selection bias. Our sample of stations near the highway may not be representative and as such should be taken with a grain of salt. 
+
+
+
+2) 
+
+```{r}
+bikeshare <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/bikeshare.csv")
+head(bikeshare)
+```
+
+Plot A 
+```{r}
+df1 <- bikeshare %>% 
+  group_by(hr, workingday) %>%
+  summarize(totalhr = sum(total),
+            number_hr = n(),
+            avgperhr = totalhr/number_hr)
+df1
+```
+```{r}
+ggplot(data = df1, aes(x = hr, y = avgperhr)) +
+  geom_line(color="blue") +   
+  ggtitle("Average Total per Hour")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+```
+Plot A is showing the average bike rentals per hour on the y-axis and a 24 hour time scale on the x axis. We see peak demand between the times of 0700 to 1000 and 1600 to 1900. In the United States these are the traditional commuting hours. As workers move to and from work we see the highest volume of rentals, on average. 
+
+
+Plot B 
+```{r}
+ggplot(data = df1, aes(x = hr, y = avgperhr)) +
+  geom_line(color="blue") + 
+  facet_wrap(~workingday)
+  ggtitle("Average Total per Hour")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+Plot B shows us similar information as Plot A but broken down by holidays (0) vs working days (1). The y-axis represents the total amount rented in a given hour shown on the x-axis utilizing a 24 hour time scale. These graphs demonstrate that peak demand is largely being driven by cycles related to commuting to and from work in the population.
+
+
+Plot C 
+```{r}
+df2 <- bikeshare%>%
+  filter(hr==8) %>%
+  group_by(workingday, weathersit)%>%
+  summarize(totalhr = sum(total),
+            number_hr = n(),
+            avgperhr = totalhr/number_hr)
+df2
+
+```
+```{r}
+ggplot(data = df2, mapping = aes(x = weathersit, y =avgperhr, fill = "red")) +
+  geom_col()+
+  facet_wrap(~workingday, nrow = 2) +
+    labs(
+    title = "Ridership at 8:00 AM by Weather",
+    x="Weather Situation",
+    y="Average Total Rentals"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") 
+```
+
+The y-axis represents average total rentals at 8:00 AM and the y-axis is a measure of the weather, with higher numbers representing more adverse weather. Plot C shows that regardless of whether or not it's a holiday, as the weather get's progressively worse ridership falls. While the scale of the decline is larger on workdays, both holidays and workdays show a similar relationship.
+
+3) 
+```{r}
+abia <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/ABIA.csv")
+head(abia)
+```
+I'd like to categorize the carriers, as defined by the UniqueCarrier variable, by the amount of canceled flights per month. For our purposes we will focus only on cancellations that are explicitly identified as being related to the carrier. This will allow us to mitigate the impact of random chance related to weather, security, and NAS cancellations. 
+
+```{r}
+df3 <- abia%>%
+  filter(CancellationCode=="A") %>%
+  group_by(UniqueCarrier, Month) %>%
+  summarize(totalcancel = sum(Cancelled))
+```
+
+```{r}
+ggplot(data = df3, aes(x = Month, y = totalcancel)) + 
+  geom_col(position = "dodge", fill = "blue") + 
+  facet_wrap(~UniqueCarrier, nrow = 5)+
+  ggtitle("Total Cancellations per Month")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+From the view of cancellations we can see that AA seems to have really struggled during 2008. To be more specific, in the month of April AA had 134 carrier cancellations while all other carriers had less than 20! This points to a rough year for AA. I feel comfortable stating that in 2008 they were the worst carrier out of Austin purely from the perspective of total canceled flights. However, after that it becomes more difficult. Next, I'll filter AA out and see if there are any other clear relationships to be seen. 
+
+
+```{r}
+df4 <- abia%>%
+  filter(CancellationCode=="A" , UniqueCarrier != "AA") %>%
+  group_by(UniqueCarrier, Month) %>%
+  summarize(totalcancel = sum(Cancelled))
+
+```
+
+```{r}
+ggplot(data = df4, aes(x = Month, y = totalcancel)) + 
+  geom_col(position = "dodge", fill = "blue") + 
+  facet_wrap(~UniqueCarrier, nrow = 5)+
+  ggtitle("Total Cancellations per Month")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+Now that our scale has adjusted, we can see two categories beginning to emerge. Generally speaking, there are airlines with more than 10 cancellations a month and those with less than 10 cancellations a month. For my ranking, I'll identify two distinct categories. The better category will be compromised of those carriers with less than 10 cancellations in all months. They are XE, UA, US, DL, EV, OO, and F9. Second, the less than ideal category is made up of carriers with more than 10 cancellations in any month. They are AA, 9E, MQ, OH, WN, YV. 
+
+A caveat to this analysis that should be considered is that it is not accounting for the size of airlines or volume of flights out of Austin. It's possible that AA has more cancellations because they have 5-10 times more flights in total then any of the other airlines. If I were to continue this analysis, the next step I would take would be to control for total size of airline and flight volume out of Austin specifically. 
+
+4) 
+
+```{r}
+sclass <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/sclass.csv")
+head(sclass)
+
+
+```
+
+```{r}
+library(parallel)
+library(caret) 
+library(foreach)
+library(FNN)
+library(rsample)
+library(modelr)
+
+df350 <- sclass %>% 
+  filter(trim == 350)%>%
+  summarize(mileage = mileage,
+            price = price)
+head(df350)
+```
+
+trim = 350 k validation 
+```{r}
+k_val = c(2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45,
+           50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300)
+df350_out = foreach(i=1:20, .combine='rbind') %dopar% {
+  df350_split = initial_split(df350, prop = .8)
+  df350_train = training(df350_split)
+  df350_test = testing(df350_split)
+  rmse350 = foreach(k = k_val, .combine = 'c') %do% {
+  model350 = knnreg(price ~ mileage, data = df350_train, k = k, use.all = TRUE)
+  modelr:: rmse(model350, df350_test)
+  }
+  data.frame(k=k_val, rmse=rmse350) 
+}
+df350_out = arrange(df350_out, k)
+```
+
+
+```{r}
+ggplot(df350_out) + geom_boxplot(aes(x=factor(k), y=rmse)) + theme_bw(base_size=7)
+```
+
+```{r}
+df350_split = initial_split(df350, prop = .8)
+  df350_train = training(df350_split)
+  df350_test = testing(df350_split)
+  
+knn15 = knnreg(price ~ mileage, data = df350_train, k=15)
+rmse(knn15, df350_test)
+
+df350_test = df350_test%>% 
+  mutate(price_pred = predict(knn15, df350_test))
+
+p_test = ggplot(data = df350_test) + 
+  geom_point(mapping = aes(x=mileage, y = price), alpha = .2)
+
+p_test + geom_line(aes(x=mileage, y=price_pred), color='red', size = 1.5)
+
+```
+
+
+
+trim = 65 AMG analysis 
+
+```{r}
+df65 <- sclass %>% 
+  filter(trim == "65 AMG")%>%
+  summarize(mileage = mileage,
+            price = price)
+head(df65)
+
+```
+
+```{r}
+df65_out = foreach(i=1:20, .combine='rbind') %dopar% {
+  df65_split = initial_split(df65, prop = .8)
+  df65_train = training(df65_split)
+  df65_test = testing(df65_split)
+  rmse65 = foreach(k = k_val, .combine = 'c') %do% {
+  model65 = knnreg(price ~ mileage, data = df65_train, k = k, use.all = TRUE)
+  modelr:: rmse(model65, df65_test)
+  }
+  data.frame(k=k_val, rmse=rmse65) 
+}
+df65_out = arrange(df65_out, k)
+
+ggplot(df65_out) + geom_boxplot(aes(x=factor(k), y=rmse)) + theme_bw(base_size=7)
+```
+```{r}
+df65_split = initial_split(df65, prop = .8)
+  df65_train = training(df65_split)
+  df65_test = testing(df65_split)
+  
+predicted65 <- knnreg(price ~ mileage, data = df350_train, k=20)
+rmse(predicted65, df65_test)
+```
+
+
+
+```{r}
+df65_split = initial_split(df65, prop = .8)
+  df65_train = training(df65_split)
+  df65_test = testing(df65_split)
+  
+knn20 = knnreg(price ~ mileage, data = df350_train, k=20)
+rmse(knn20, df65_test)
+
+df65_test = df65_test%>% 
+  mutate(price_pred65 = predict(knn20, df65_test))
+
+t_test = ggplot(data = df65_test) + 
+  geom_point(mapping = aes(x=mileage, y = price), alpha = .2)
+
+t_test + geom_line(aes(x=mileage, y=price_pred65), color='red', size = 1.5)
+
+```
+
+So for trim == 350 optimal k was equal to 15. For trim == 65 AMG, optimal k was equal to 20. I'm pretty sure it has something to do with the sample size and the fact that the 350 data set has more observations. Because we want to minimize the RMSE and that's dependent on the value of M on the slides. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

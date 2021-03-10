@@ -1,0 +1,154 @@
+---
+title: "Data Mining Assignment 2"
+author: "Patrick Chase"
+date: "3/6/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Loading and cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+library(magrittr)
+library(tidyverse)
+library(ggplot2)
+library(curl)
+library(parallel)
+library(caret) 
+library(foreach)
+library(FNN)
+library(rsample)
+library(modelr)
+
+capmetro_UT <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/capmetro_UT.csv")
+
+# Recode the categorical variables in sensible, rather than alphabetical, order
+capmetro_UT = mutate(capmetro_UT,
+               day_of_week = factor(day_of_week,
+                 levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+               month = factor(month,
+                 levels=c("Sep", "Oct","Nov")))
+
+
+```
+
+# 1.  
+```{r Avg Hourly Boarding by Day, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+## group, pipe, summarize plot 1a
+pan1 <- capmetro_UT %>%
+  group_by(hour_of_day, day_of_week, month) %>%
+  summarize(totalhr = sum(boarding),
+            avg_per_hr = totalhr/n(),
+            day_of_week = day_of_week,
+            month = month)
+
+## Avg hourly boarding for Sept, Oct, Nov faceted on day of week
+plot.1.a <- ggplot(data = pan1, aes(x = hour_of_day, y = avg_per_hr)) + 
+  geom_line(aes(color = month)) + 
+  facet_wrap(~day_of_week) + 
+  labs(
+    title = "Average Hourly Boarding for September, October, November by Day of Week",
+    x="Hour of Day",
+    y="Average Boarding per Hour"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+plot.1.a
+
+
+
+```
+
+**CAPTION TYPE UP FOR PLOT 1A**
+
+
+```{r Scatter of boarding and temp, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+## group, pipe summarize plot 1b
+pan2 <-  capmetro_UT %>%
+  summarize(board = boarding, 
+            temp = temperature,
+            hour = hour_of_day,
+            weekend = weekend)
+
+## Scatter of boarding and temperature faceted on hour of day
+plot.1.b <- ggplot(data = pan2) +
+  geom_point(alpha = .25, mapping = aes(x = temp, y = board, color = weekend)) + 
+  facet_wrap(~hour) +
+  labs(
+    title = "Ridership vs Temperature by Hour of Day",
+    x="Temperature",
+    y="Ridership"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+
+
+plot.1.b
+
+```
+
+
+**CAPTION TYPE UP FOR PLOT 1B**
+
+# 2. 
+```{r Loading and Cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+
+
+library(tidyverse)
+library(ggplot2)
+library(modelr)
+library(rsample)
+library(mosaic)
+library(parallel)
+library(caret) 
+library(foreach)
+library(FNN)
+library(rsample)
+library(modelr)
+data("SaratogaHouses")
+
+
+houses <- SaratogaHouses 
+
+houses$newConstruction <- ifelse(houses$newConstruction == "Yes", 1, 0)
+houses$waterfront <- ifelse(houses$waterfront == "Yes", 1, 0)
+rename(houses, new.con = newConstruction)
+
+
+
+```
+
+
+
+```{r Model to Beat, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+
+
+saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+saratoga_train = training(saratoga_split)
+saratoga_test = testing(saratoga_split)
+
+lm_medium = lm(price ~ lotSize + age + livingArea + bedrooms + 
+		fireplaces + bathrooms + rooms + heating + fuel + centralAir, data=SaratogaHouses)
+
+rmse(lm_medium,saratoga_test) ## rmse ranged from 62000 to 75000 ish 
+
+
+```
+
+
+```{r My Model, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+
+my_mod <- lm(price ~ lotSize + age + landValue + bedrooms + bathrooms + rooms + waterfront + newConstruction + lotSize*landValue, data = houses)
+
+houses_split = initial_split(houses, prop = .8)
+houses_train = training(houses_split)
+houses_test = testing(houses_split)
+
+rmse(my_mod,houses_test)
+
+```
+
+
+
+
+
+
