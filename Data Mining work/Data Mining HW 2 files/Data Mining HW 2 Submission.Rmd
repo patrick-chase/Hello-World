@@ -2,14 +2,16 @@
 title: "Data Mining Assignment 2"
 author: "Patrick Chase"
 date: "3/6/2021"
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, error = TRUE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 ```
-
-```{r Loading and cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+# 1.  
+```{r Loading and cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 library(magrittr)
 library(tidyverse)
 library(ggplot2)
@@ -33,8 +35,8 @@ capmetro_UT = mutate(capmetro_UT,
 
 ```
 
-# 1.  
-```{r Avg Hourly Boarding by Day, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+ 
+```{r Avg Hourly Boarding by Day, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 ## group, pipe, summarize plot 1a
 pan1 <- capmetro_UT %>%
   group_by(hour_of_day, day_of_week, month) %>%
@@ -59,10 +61,10 @@ plot.1.a
 
 ```
 
-**CAPTION TYPE UP FOR PLOT 1A**
+*Plot 1a is showing the average hourly boarding for September, October, and November by day of the week. On weekdays, we see a clear peak around 4:00 pm every day however, on weekends ridership remains relatively flat. A possible reason we see lower ridership on Mondays for September is probably because of the Labor Day holiday that falls on Monday. This caused 1 Monday in September to have drastically lower boardings, thus causing a decrease in it's Monday's average for September. Similarly, for Wednesday through Friday in November, we can see a decrease likely because of the Thanksgiving holiday.*
 
 
-```{r Scatter of boarding and temp, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+```{r Scatter of boarding and temp, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 ## group, pipe summarize plot 1b
 pan2 <-  capmetro_UT %>%
   summarize(board = boarding, 
@@ -85,12 +87,10 @@ plot.1.b <- ggplot(data = pan2) +
 plot.1.b
 
 ```
-
-
-**CAPTION TYPE UP FOR PLOT 1B**
+*Plot 1b is showing boardings by temprature controlling for hour of the day and whether it is a weekday or a weekend. When holding hour of the day and weekend status constant, there doesn't seem to be a clear relationship between ridership and temperature. The fluctuations shown in these scatter plots could just as easily be explained by the normal commuting patterns of students.*
 
 # 2. 
-```{r Loading and Cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+```{r Loading and Cleaning, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 
 
 library(tidyverse)
@@ -106,20 +106,14 @@ library(rsample)
 library(modelr)
 data("SaratogaHouses")
 
-
-houses <- SaratogaHouses 
-
-houses$newConstruction <- ifelse(houses$newConstruction == "Yes", 1, 0)
-houses$waterfront <- ifelse(houses$waterfront == "Yes", 1, 0)
-rename(houses, new.con = newConstruction)
-
+houses <- SaratogaHouses
 
 
 ```
 
 
 
-```{r Model to Beat, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+```{r Model to Beat, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 
 
 saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
@@ -129,23 +123,233 @@ saratoga_test = testing(saratoga_split)
 lm_medium = lm(price ~ lotSize + age + livingArea + bedrooms + 
 		fireplaces + bathrooms + rooms + heating + fuel + centralAir, data=SaratogaHouses)
 
-rmse(lm_medium,saratoga_test) ## rmse ranged from 62000 to 75000 ish 
+
+# baseline medium model with 11 main effects
+lm_medium = lm(price ~ lotSize + age + livingArea + pctCollege + bedrooms + 
+		fireplaces + bathrooms + rooms + heating + fuel + centralAir, data=SaratogaHouses)
+ ## rmse ranged from 62000 to 75000 ish 
 
 
 ```
 
 
-```{r My Model, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
-
+```{r My Model, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)
+library(mosaic)
+library(Metrics)
+library(modelr)
+library(doMC)
 my_mod <- lm(price ~ lotSize + age + landValue + bedrooms + bathrooms + rooms + waterfront + newConstruction + lotSize*landValue, data = houses)
+
 
 houses_split = initial_split(houses, prop = .8)
 houses_train = training(houses_split)
 houses_test = testing(houses_split)
 
-rmse(my_mod,houses_test)
+
+
+
+registerDoMC(cores=4)
+
+rmse = function(y, yhat) {sqrt( mean( (y - yhat)^2 ))}
+
+N = nrow(SaratogaHouses)
+LOO = foreach(i = 1:N, .combine='rbind') %dopar% {
+  saratoga_train = SaratogaHouses[-i,]
+  saratoga_test = SaratogaHouses[i,]
+
+  medium_train = update(lm_medium, data=saratoga_train)
+  my_mod_train = update(my_mod, data=saratoga_train)
+  
+
+  medium_test = predict(medium_train, saratoga_test)
+  my_test = predict(my_mod_train, saratoga_test)
+  
+  mse_medium = (medium_test - saratoga_test$price)^2
+  mse_mine = (my_test - saratoga_test$price)^2
+
+  c(mse_medium, mse_mine)
+}
+sqrt(colMeans(LOO))
 
 ```
+
+
+```{r plot 2 of number 2 (KNN), message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+mod_spec = model.matrix(~ lotSize + age + landValue + bedrooms + bathrooms + rooms + waterfront + newConstruction -1, data = houses)
+
+
+feature_sd = apply(mod_spec, 2, sd)
+mod_std = scale(mod_spec, scale=feature_sd)
+
+N= nrow(houses)
+
+#KNN Code
+k_val = k_val = c(2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45,
+           50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300)
+mod_spec_out = foreach(i=1:N, .combine='rbind') %dopar% {
+  mod_train = mod_std[-i,]
+  mod_test = mod_std[i,]
+  y_train = houses$price[-i]
+  y_test = houses$price[i]
+  mod_mse_out = foreach(k = k_val, .combine='c') %do% {
+    knn_fit = knn.reg(mod_train, mod_test, y_train, k)
+    (y_test - knn_fit$pred)^2 
+  }
+  
+  mod_mse_out
+}
+
+rmse = sqrt(colMeans(mod_spec_out))
+
+mod_spec_out <- data.frame(k = k_val, rmse = rmse)
+
+ggplot(mod_spec_out) + geom_boxplot(aes(x=factor(k), y=rmse)) + theme_bw(base_size=7)
+
+
+```
+*My model seems to out perform lm_medium by about 5%-6%. That said the KNN model with k = 8  outperforms both by 15%-20%. Depending on the geographic market you're in, I'd say we need to rely heavily on the location because houses in the same neighborhood are generally going to relatively similar. This is especially true if you're looking at suburban neighborhoods that were all developed at the same time by the same development company. This strategy would likely have to change if we were in a rural area but we should look at the going rate of similar houses, particularly those that are physical close to the proprety in question, and use that to determine our valuation.*
+
+# 3. 
+```{r Data loading #3, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+credit_data <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/german_credit.csv")
+
+```
+
+```{r MODEL, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+logit1 <- glm(Default ~ duration + amount + installment + age + history + purpose + foreign, data = credit_data, family = "binomial")
+
+df1 <- data.frame(default.probability = logit1$fitted.values, credit.history = credit_data$history)
+
+df2 <- df1 %>%
+  group_by(credit.history) %>%
+  summarise(avg.default.prob = mean(default.probability))
+
+
+plot.3.a <- ggplot(data = df2, mapping = aes(x = credit.history, y = avg.default.prob ), fill = "blue") + 
+  geom_col()+
+  labs(
+    title = "Average Default Probability by Credit History",
+    x = "Credit History", 
+    y = "Default Probability"
+  )+ 
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") 
+
+plot.3.a
+
+
+```
+
+*With this data set, it would seem that the credit history rating is predicting in the exact opposite direction it was originally intended. Those with "terrible" credit history are the least likely to default. This is likely due to sampling bias. If very few individuals with "terrible" credit are being granted lines of credit then in all likelihood the bank has a good reason to give them credit that trumps their credit history. If the bank wanted to improve it's sampling method, it should be collecting attributes of those it denies credit to as well. This will expand the sample and probably increase the quality of those individuals *
+
+# 4. 
+##    4.1 
+```{r #4 Data loading and Libraries, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(rsample)
+library(parallel)
+library(caret) 
+library(foreach)
+library(FNN)
+library(rsample)
+library(modelr)
+library(mosaic)
+library(foreach)
+library(doMC)  # for parallel computing
+library(Metrics) 
+library(gamlr)
+
+
+
+hotel.dev <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/hotels_dev.csv")
+```
+
+```{r #4 train-test splits, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+hotel.dev.split = initial_split(hotel.dev, prop = .8) 
+hotel.dev.train = training(hotel.dev.split)
+hotel.dev.test = testing(hotel.dev.split)
+
+```
+
+```{r #4 big and small model specifications, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+small_mod = glm(children ~ market_segment + adults + customer_type + is_repeated_guest, data = hotel.dev.train, family = "binomial")
+big_mod = glm(children ~ . -arrival_date, data = hotel.dev.train, family = "binomial")
+```
+
+```{r #4 step model specification, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+##step_mod2 <- step(big_mod,
+##                 scope=~(.))
+##I ran step_mod2 using the step command then decided to represent it as a normal logit model to speed up processing times when knitting
+
+step_mod2 = glm(formula = children ~ hotel + lead_time + stays_in_weekend_nights + 
+    stays_in_week_nights + adults + meal + market_segment + distribution_channel + 
+    is_repeated_guest + previous_bookings_not_canceled + reserved_room_type + 
+    assigned_room_type + booking_changes + customer_type + average_daily_rate + 
+    required_car_parking_spaces + total_of_special_requests, 
+    family = "binomial", data = hotel.dev.train)
+```
+
+```{r #4 AICs Dataframe Model Metric, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+AICs <- data.frame(AICs = c(AICc(step_mod2), AICc(small_mod), AICc(big_mod)), Model = c("step_mod2", "small_mod", "big_mod"))
+AICs
+```
+
+```{r #4 Step 1 ROC graph generation, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+hotel.val <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/hotels_val.csv")
+
+
+phat_test_step = predict(step_mod2, hotel.val, type='response')
+thresh_grid = seq(0.95, 0.05, by=-0.005)
+roc_curve_step = foreach(thresh = thresh_grid, .combine='rbind') %do% {
+  yhat_test_step = ifelse(phat_test_step>= thresh, 1, 0)
+  # FPR, TPR for linear model
+  confusion_out_step = table(y = hotel.val$children, yhat = yhat_test_step)
+  out_step = data.frame(model = "logit",
+                       TPR = confusion_out_step[2,2]/sum(hotel.val$children==1),
+                       FPR = confusion_out_step[1,2]/sum(hotel.val$children==0))
+  
+  rbind(out_step)
+} %>% as.data.frame()
+
+
+ROCgraph <- ggplot(roc_curve_step) + 
+  geom_line(aes(x=FPR, y=TPR, color=model)) + 
+  labs(title="ROC curve for step_mod2") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+ROCgraph
+```
+
+##    4.2
+```{r #4 Step 2 20 fold CV, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(cvTools) #run the above line if you don't have this library
+
+k <- 20 #the number of folds
+
+folds <- cvFolds(NROW(hotel.val), K=k)
+hotel.val$holdoutpred <- rep(0,nrow(hotel.val))
+
+for(i in 1:k){
+  train <- hotel.dev[folds$subsets[folds$which != i], ] #Set the training set
+  validation <- hotel.val[folds$subsets[folds$which == i], ] #Set the validation set
+
+  stepmod2 <- glm(formula = children ~ hotel + lead_time + stays_in_weekend_nights + 
+    stays_in_week_nights + adults + meal + market_segment + distribution_channel + 
+    is_repeated_guest + previous_bookings_not_canceled + reserved_room_type + 
+    assigned_room_type + booking_changes + customer_type + average_daily_rate + 
+    required_car_parking_spaces + total_of_special_requests, 
+    family = "binomial", data = train) #fit on the hotel.dev data)
+  newpred <- predict(stepmod2,newdata=validation) #Predictions for the validation set
+
+}
+newpred
+head(newpred)
+
+```
+*So I've tried this a bunch of different ways and I haven't been able to figure out how to arrive at the asked for outputs. After consulting with Rui, I'm pretty sure I've done the 20-fold validation correctly but I'm not sure how to move from that into a neat table to get the predicted values, summed probabilities, and the actual bookings into a neat table. * 
 
 
 

@@ -1,0 +1,266 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Data Mining Assignment 2},
+  pdfauthor={Patrick Chase},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Data Mining Assignment 2}
+\author{Patrick Chase}
+\date{3/6/2021}
+
+\begin{document}
+\maketitle
+
+\hypertarget{section}{%
+\section{1.}\label{section}}
+
+\includegraphics{Data-Mining-HW-2-Submission_files/figure-latex/Avg Hourly Boarding by Day-1.pdf}
+
+\emph{Plot 1a is showing the average hourly boarding for September,
+October, and November by day of the week. On weekdays, we see a clear
+peak around 4:00 pm every day however, on weekends ridership remains
+relatively flat. A possible reason we see lower ridership on Mondays for
+September is probably because of the Labor Day holiday that falls on
+Monday. This caused 1 Monday in September to have drastically lower
+boardings, thus causing a decrease in it's Monday's average for
+September. Similarly, for Wednesday through Friday in November, we can
+see a decrease likely because of the Thanksgiving holiday.}
+
+\includegraphics{Data-Mining-HW-2-Submission_files/figure-latex/Scatter of boarding and temp-1.pdf}
+\emph{Plot 1b is showing boardings by temprature controlling for hour of
+the day and whether it is a weekday or a weekend. When holding hour of
+the day and weekend status constant, there doesn't seem to be a clear
+relationship between ridership and temperature. The fluctuations shown
+in these scatter plots could just as easily be explained by the normal
+commuting patterns of students.}
+
+\hypertarget{section-1}{%
+\section{2.}\label{section-1}}
+
+\begin{verbatim}
+##        1        1 
+## 66624.01 63106.94
+\end{verbatim}
+
+\includegraphics{Data-Mining-HW-2-Submission_files/figure-latex/plot 2 of number 2 (KNN)-1.pdf}
+\emph{My model seems to out perform lm\_medium by about 5\%-6\%. That
+said the KNN model with k = 8 outperforms both by 15\%-20\%. Depending
+on the geographic market you're in, I'd say we need to rely heavily on
+the location because houses in the same neighborhood are generally going
+to relatively similar. This is especially true if you're looking at
+suburban neighborhoods that were all developed at the same time by the
+same development company. This strategy would likely have to change if
+we were in a rural area but we should look at the going rate of similar
+houses, particularly those that are physical close to the proprety in
+question, and use that to determine our valuation.}
+
+\hypertarget{section-2}{%
+\section{3.}\label{section-2}}
+
+\includegraphics{Data-Mining-HW-2-Submission_files/figure-latex/MODEL-1.pdf}
+
+\emph{With this data set, it would seem that the credit history rating
+is predicting in the exact opposite direction it was originally
+intended. Those with ``terrible'' credit history are the least likely to
+default. This is likely due to sampling bias. If very few individuals
+with ``terrible'' credit are being granted lines of credit then in all
+likelihood the bank has a good reason to give them credit that trumps
+their credit history. If the bank wanted to improve it's sampling
+method, it should be collecting attributes of those it denies credit to
+as well. This will expand the sample and probably increase the quality
+of those individuals }
+
+\hypertarget{section-3}{%
+\section{4.}\label{section-3}}
+
+\hypertarget{section-4}{%
+\subsection{4.1}\label{section-4}}
+
+\begin{verbatim}
+##       AICs     Model
+## 1 13838.32 step_mod2
+## 2 18803.71 small_mod
+## 3 13839.94   big_mod
+\end{verbatim}
+
+\includegraphics{Data-Mining-HW-2-Submission_files/figure-latex/\#4 Step 1 ROC graph generation-1.pdf}
+
+\hypertarget{section-5}{%
+\subsection{4.2}\label{section-5}}
+
+\begin{verbatim}
+##          1270          4964            97          3662          1331 
+##  -5.445204792  -4.150820680  -3.550075049  -4.841343140  -3.378872282 
+##          4951          4815          2437          2947          2899 
+##  -2.980718718  -4.371118771  -3.450671095   0.224200054  -8.326054021 
+##          4677           966          1150          2663          2464 
+##  -5.719422007  -2.985804312   0.497624291  -3.535484974  -3.424542489 
+##          2560          4682          4204          4976          4625 
+##  -2.026870924  -2.923637797  -3.937484712  -2.604518045  -2.805271681 
+##          4860          3853          3368          2010            88 
+##  -4.243767782  -4.491250741  -3.542473847  -4.570245565  -0.725799909 
+##            96          4031          3294           495          1579 
+##  -2.992906772  -4.144391120  -4.375267627  -2.130551098  -3.027259521 
+##          4308          3262          4299           771          1747 
+##  -3.828165906  -2.347354741  -3.295802970  -3.038622821   2.791837060 
+##          3380          2532           453           341          2098 
+##  -5.457810884   0.285014024  -5.278027827  -4.388867550  -2.155124866 
+##          2228          2339          3108           423          4252 
+##  -2.203036644  -2.186216917  -3.128139027  -4.074875061  -5.771462188 
+##          1243          4958          3694          2440          3624 
+##  -2.836794124  -4.685647213  -4.471300163  -3.760461454  -2.432916672 
+##           358          1041          1403          1255          4078 
+##  -4.774265697  -3.516519514  -4.346874455  -1.519640272  -4.159019989 
+##          3967          3605          4237           235          3204 
+##  -1.724490170  -3.212785323  -3.816743083  -4.256441275  -5.705163186 
+##          4960          3839          3263          3781          3680 
+##  -5.862892860  -5.880856951  -2.670475090  -3.484687248  -1.022404448 
+##          3235          1432           482           439          2209 
+##  -4.207353242  -4.073669561  -2.838800087  -2.844300984   0.532251964 
+##          4833           608          1978          2056          1944 
+##   0.339758574  -2.950669101  -5.175950166  -4.410591990  -3.701235706 
+##           829            93          4941          3616          2145 
+##  -3.436217592  -3.349175021  -1.259845527  -3.339669126  -1.914648077 
+##          1136           867           285          2576          3899 
+##  -2.889167867  -2.897477234  -3.169571805  -2.810400031  -3.036189379 
+##          3141          3759          2355          1063          2604 
+##  -3.131217795  -3.625161348  -1.664980614  -2.877251804  -1.542525707 
+##           769          4995          1739          1616          1193 
+##  -4.357540217  -4.002056258  -3.376638866  -3.469638765  -2.710612773 
+##          3704          3698           273          3426          4678 
+##  -3.448899446  -3.080870519  -3.584102910  -2.205503401  -4.613303650 
+##          3656          3060          4564          1503          3083 
+##  -4.005113443  -2.062716257  -3.244830133  -5.448401389  -1.918104619 
+##          1651          3554          3335          3916          1552 
+##  -3.629745927  -3.704506493  -2.859768489  -1.227391445  -2.596464942 
+##          2550           304          3224          2607          2542 
+##  -2.109745001  -3.475783876  -3.354615398  -4.796211202  -3.483711906 
+##          4456           533          4057          2168          4533 
+##  -4.561354246  -3.393643538   1.343676854  -3.046364729  -2.064278552 
+##          3773          2147           945          1183          3754 
+##   1.599871539  -3.217053625  -3.088377895  -2.673473158  -4.591240470 
+##          2878          2751          2682          4492          1927 
+##  -2.928331754  -1.439445230 -16.227941712  -3.928909636  -5.094048515 
+##          4453           111          2390          1837          2725 
+##   0.430383853  -1.170127123  -2.997707599  -0.879480408  -1.734715956 
+##          4584          4135          3185          2578          4103 
+##  -3.865517173  -3.829426768  -2.467891656  -3.640854049  -0.099994131 
+##           698          2426           535          4159          3350 
+##  -2.635135266  -0.874650654  -1.562481739  -3.015207163  -3.586419573 
+##          4278          1838          1458          4168          3820 
+##  -5.378092111  -2.861203827  -3.396215369  -2.966714019  -2.907073517 
+##          2268          1070          1196          3283          4829 
+##  -3.994223478  -2.872131816  -3.222707925  -2.310527948  -3.189111012 
+##          4111          2552          3646          3976          4900 
+##  -5.912602311  -6.061276047  -0.269269090   2.367376813  -5.841367415 
+##          2034          3600          1161          1347          1055 
+##  -2.042809318  -3.849123040  -2.262881829  -2.987453101  -2.723082123 
+##          1483          3232          1743          2193          3236 
+##  -2.233867428  -2.487581921  -6.801297068  -3.027614885  -2.452249827 
+##          1885          1078           705          2270           628 
+##  -5.140400787  -3.610717207  -3.027971875  -5.944138427  -3.662288380 
+##          3135           626          2704          3460          3678 
+##  -3.848087888  -1.536072938  -3.276403386  -6.260599581  -2.988659576 
+##          1122          2146          1392          1909          1642 
+##  -5.597233551  -2.686664703  -1.239399366  -3.838617423  -3.171678004 
+##          1296          3199           500           980          4722 
+##  -3.902039409  -5.637921458  -3.882811649  -4.880042718  -3.537622432 
+##          1262          1847            22          1071          2450 
+##  -5.516031544  -2.600811359  -3.499271938  -4.569406023  -3.111022179 
+##          4607          2397           877          3316           128 
+##  -5.860726486  -4.470420508  -4.620943503  -2.516683805  -1.282271445 
+##          2934           323          2217          4709          3344 
+##  -0.727101644  -3.723241871  -2.344453513  -3.443869844  -3.002777488 
+##          2680          3731          2944          4684          2446 
+##  -4.548950766  -3.095943304  -1.201876558  -1.884942794  -4.210147727 
+##          2854           326           209          2948          2795 
+##  -2.302729282  -6.744388105  -3.498020076  -3.382812422  -3.020251825 
+##          2479          3386          2443          4749          4704 
+##  -5.289123133  -3.923512062  -5.676657181  -2.043287260  -6.687726739 
+##          2558          3476          3084           826          2820 
+##  -2.646901671  -1.535847122  -2.343972752  -3.404723523   2.075587467 
+##          2380          1488          3164          2167          4145 
+##  -1.283238195  -5.598694012  -0.003864817  -1.893481875  -1.413418479 
+##          4510           899          1610          1495          2546 
+##  -3.851124221  -0.543659249  -3.259896872   0.837068729  -3.768708034 
+##          3830          1357          4809          1950           450 
+##  -5.362197696  -0.240472343  -3.035008049  -2.845045789  -1.249040479 
+##          3893          3934          2241          3454          2304 
+##  -1.976143142  -2.862871217  -2.362002229  -3.290317792  -3.154991451 
+##          1824          2988          3207           313 
+##  -0.286292760  -0.743072375  -4.226710701  -3.900235620
+\end{verbatim}
+
+\begin{verbatim}
+##      1270      4964        97      3662      1331      4951 
+## -5.445205 -4.150821 -3.550075 -4.841343 -3.378872 -2.980719
+\end{verbatim}
+
+\emph{So I've tried this a bunch of different ways and I haven't been
+able to figure out how to arrive at the asked for outputs. After
+consulting with Rui, I'm pretty sure I've done the 20-fold validation
+correctly but I'm not sure how to move from that into a neat table to
+get the predicted values, summed probabilities, and the actual bookings
+into a neat table. }
+
+\end{document}

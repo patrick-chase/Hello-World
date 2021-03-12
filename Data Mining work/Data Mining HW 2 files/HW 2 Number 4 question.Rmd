@@ -1,0 +1,41 @@
+---
+title: 'HW 2 #4 question'
+author: "Patrick Chase"
+date: "3/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##    4.2
+```{r #4 Step 2 20 fold CV, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+hotel.val <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/hotels_val.csv")
+install.packages("cvTools")
+library(cvTools) #run the above line if you don't have this library
+
+k <- 20 #the number of folds
+
+folds <- cvFolds(NROW(hotel.val), K=k)
+hotel.val$holdoutpred <- rep(0,nrow(hotel.val))
+
+for(i in 1:k){
+  train <- hotel.val[folds$subsets[folds$which != i], ] #Set the training set
+  validation <- hotel.val[folds$subsets[folds$which == i], ] #Set the validation set
+
+  stepmod2 <- glm(formula = children ~ hotel + lead_time + stays_in_weekend_nights + 
+    stays_in_week_nights + adults + meal + market_segment + distribution_channel + 
+    is_repeated_guest + previous_bookings_not_canceled + reserved_room_type + 
+    assigned_room_type + booking_changes + customer_type + average_daily_rate + 
+    required_car_parking_spaces + total_of_special_requests, 
+    family = "binomial", data = train) #fit on the hotel.val train data)
+  newpred <- predict(stepmod2,newdata=validation) #Predictions for the validation set
+
+}
+newpred
+
+
+```
+**So I've tried this a bunch of different ways and i haven't been able to figure out how to arrive at the asked for outputs. I'm pretty sure I've done the 20-fold validation correctly but I'm not sure how to move from that into a neat table to get the predicted values, summed probabilities, and the actual bookings into a neat table. ** 
+
+
