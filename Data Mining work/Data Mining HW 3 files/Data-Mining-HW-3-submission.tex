@@ -1,0 +1,182 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Data Mining HW 3},
+  pdfauthor={Patrick Chase},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{longtable}
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Data Mining HW 3}
+\author{Patrick Chase}
+\date{4/7/2021}
+
+\begin{document}
+\maketitle
+
+\hypertarget{section}{%
+\section{1.}\label{section}}
+
+That approach would not account for lots of things, such as the
+differing styles of policing in cities, local policy, having a baseline
+comparison or counterfactual. In short, it may point at some
+relationship existing but the specific question of ``increased police
+presence causes x to happen'' can't really be based off of that
+analysis. Not only that, the question of generalizability is always an
+important one to ask. Maybe the impacts of police presence are
+heterogenous.
+
+\hypertarget{section-1}{%
+\section{2.}\label{section-1}}
+
+Due to a policy decisions to increase police presence around Washington,
+D.C. because of higher threats of terrorist activity and not because of
+increased crimes, an opportunity for the researchers to conduct a
+natural experiment presented itself. The researchers compared crime
+rates on days with low terrorist threat levels to crime rates on days
+with high terrorist threat levels, controlling for day of the week and
+metro ridership. Table 2 presents these two simple models where column 1
+regresses total daily crimes on alert levels controling for day of week
+and column two adds a measure of ridership to the the model. They found
+that on high alert days there were roughly 7 less crimes committed
+compared low alert days.
+
+\hypertarget{section-2}{%
+\section{3.}\label{section-2}}
+
+They chose to control for Metro ridership because they believed it was
+possible that tourists avoided D.C. on days when it was publicized that
+the risk level was increased on a given day. Their hypothesis was that
+less tourists could lead to less crimes being commited. As a result, the
+researchers tried to control for this and compare days with similar
+threat levels AND similar ridership.
+
+\hypertarget{section-3}{%
+\section{4.}\label{section-3}}
+
+The model is estimating the differing impacts within districts
+accounting for district level fixed effects. It seems that a
+disproportionate amount of the decrease in criminal activity occurs in
+District 1.
+
+\hypertarget{green-building-model}{%
+\section{5. Green building model}\label{green-building-model}}
+
+\hypertarget{overview}{%
+\subsection{Overview}\label{overview}}
+
+The goal of this model is to estimate the return to investing in green
+certification. Specifically, we want to estimate the average change in
+rental per square foot given green certification (LEED or EnergyStar).
+
+\hypertarget{data-and-model}{%
+\subsection{Data and Model}\label{data-and-model}}
+
+The data we will be using is a collection of 7894 commercial rental
+properties. In this data set 685 rentals, or approximately 9\% of the
+properties, are green certified. For this analysis we will only consider
+if a building has any green certification and not compare between LEED
+or EnergyStar.
+
+Lets begin with some linear regressions to get a feel of the relevant
+relationships. Models 1 regresses rent per square foot on green
+certification. Model 2 regresses rent per square foot on all variables,
+excluding CS\_PropertyID, LEED, and EnergyStar. Model 3 uses stepwise
+selection on Model 2 to choose the most impactful variables
+
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{rrr}
+\caption*{
+\large RMSE\\ 
+\small \\ 
+} \\ 
+\toprule
+Model 1 & Model 2 & Model 3 \\ 
+\midrule
+1602.516 & 296.7834 & 296.8826 \\ 
+\bottomrule
+\end{longtable}
+
+\hypertarget{results}{%
+\subsection{Results}\label{results}}
+
+\hypertarget{conclusion}{%
+\subsection{Conclusion}\label{conclusion}}
+
+\hypertarget{california-housing-model}{%
+\section{6. California Housing Model}\label{california-housing-model}}
+
+\hypertarget{overview-1}{%
+\subsection{Overview}\label{overview-1}}
+
+\hypertarget{data-and-model-1}{%
+\subsection{Data and Model}\label{data-and-model-1}}
+
+\hypertarget{results-1}{%
+\subsection{Results}\label{results-1}}
+
+\hypertarget{conclusion-1}{%
+\subsection{Conclusion}\label{conclusion-1}}
+
+\end{document}

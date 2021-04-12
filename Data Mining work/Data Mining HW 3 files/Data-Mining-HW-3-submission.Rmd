@@ -1,0 +1,104 @@
+---
+title: "Data Mining HW 3"
+author: "Patrick Chase"
+date: "4/7/2021"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup,include=FALSE, error = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 1. 
+That approach would not account for lots of things, such as the differing styles of policing in cities, local policy, having a baseline comparison or counterfactual. In short, it may point at some relationship existing but the specific question of "increased police presence causes x to happen" can't really be based off of that analysis. Not only that, the question of generalizability is always an important one to ask. Maybe the impacts of police presence are heterogenous. 
+
+# 2. 
+Due to a policy decisions to increase police presence around Washington, D.C. because of higher threats of terrorist activity and not because of increased crimes, an opportunity for the researchers to conduct a natural experiment presented itself. The researchers compared crime rates on days with low terrorist threat levels to crime rates on days with high terrorist threat levels, controlling for day of the week and metro ridership. Table 2 presents these two simple models where column 1 regresses total daily crimes on alert levels controling for day of week and column two adds a measure of ridership to the the model. They found that on high alert days there were roughly 7 less crimes committed compared low alert days.  
+
+# 3. 
+They chose to control for Metro ridership because they believed it was possible that tourists avoided D.C. on days when it was publicized that the risk level was increased on a given day. Their hypothesis was that less tourists could lead to less crimes being commited. As a result, the researchers tried to control for this and compare days with similar threat levels AND similar ridership.  
+
+# 4. 
+The model is estimating the differing impacts within districts accounting for district level fixed effects. It seems that a disproportionate amount of the decrease in criminal activity occurs in District 1.   
+
+# 5. Green building model
+## Overview
+  The goal of this model is to estimate the return to investing in green certification. Specifically, we want to estimate the average change in rental per square foot given green certification (LEED or EnergyStar).
+
+## Data and Model
+
+```{r data rev sqft generation train test split, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(rsample) 
+library(randomForest)
+library(lubridate)
+library(modelr)
+library(formattable)
+
+
+green_buildings <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/greenbuildings.csv")
+
+green_buildings = mutate(green_buildings, 
+                         rev_sqft = Rent*leasing_rate)
+green_buildings2 <- na.omit(green_buildings)
+
+green_split = initial_split(green_buildings2)
+green_train = training(green_split)
+green_test =  testing(green_split)
+
+```
+  
+The data we will be using is a collection of 7894 commercial rental properties. In this data set 685 rentals, or approximately 9% of the properties, are green certified. For this analysis we will only consider if a building has any green certification and not compare between LEED or EnergyStar.  
+
+Lets begin with some linear regressions to get a feel of the relevant relationships. Models 1 regresses rent per square foot on green certification. Model 2 regresses rent per square foot on all variables, excluding CS_PropertyID, LEED, and EnergyStar. Model 3 uses stepwise selection on Model 2 to choose the most impactful variables 
+
+
+
+```{r Models 1 2 3 , message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+mod1 <- lm(rev_sqft ~ green_rating, data = green_train)
+mod2 <- lm(rev_sqft ~ . - CS_PropertyID - LEED - Energystar, data = green_train)
+mod3 <- step(mod2, direction = "both", trace = 0)
+
+```
+
+```{r Stepwise selection,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+library(gt)
+rmse_out<- data_frame("Model 1" = modelr::rmse(mod1, green_test), 
+                      "Model 2" = modelr::rmse(mod2, green_test), 
+                      "Model 3" = modelr::rmse(mod3, green_test))
+RMSE_table <- rmse_out %>% 
+  gt() %>% 
+  tab_header( 
+    title = "RMSE")
+RMSE_table
+
+```
+
+```{r}
+RMSE_table
+```
+
+## Results
+
+
+## Conclusion
+
+
+
+
+
+
+
+# 6. California Housing Model
+## Overview
+
+## Data and Model
+
+## Results
+
+## Conclusion
+

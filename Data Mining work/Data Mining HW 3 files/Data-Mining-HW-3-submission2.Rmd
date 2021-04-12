@@ -1,0 +1,233 @@
+---
+title: "Data Mining HW 3"
+author: "Patrick Chase"
+date: "4/7/2021"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup,include=FALSE, error = TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 1. 
+That approach would not account for lots of things, such as the differing styles of policing in cities, local policy, having a baseline comparison or counterfactual. In short, it may point at some relationship existing but the specific question of "increased police presence causes x to happen" can't really be based off of that analysis. Not only that, the question of generalizability is always an important one to ask. Maybe the impacts of police presence are heterogenous. 
+
+# 2. 
+Due to a policy decisions to increase police presence around Washington, D.C. because of higher threats of terrorist activity and not because of increased crimes, an opportunity for the researchers to conduct a natural experiment presented itself. The researchers compared crime rates on days with low terrorist threat levels to crime rates on days with high terrorist threat levels, controlling for day of the week and metro ridership. Table 2 presents these two simple models where column 1 regresses total daily crimes on alert levels controling for day of week and column two adds a measure of ridership to the the model. They found that on high alert days there were roughly 7 less crimes committed compared low alert days.  
+
+# 3. 
+They chose to control for Metro ridership because they believed it was possible that tourists avoided D.C. on days when it was publicized that the risk level was increased on a given day. Their hypothesis was that less tourists could lead to less crimes being commited. As a result, the researchers tried to control for this and compare days with similar threat levels AND similar ridership.  
+
+# 4. 
+The model is estimating the differing impacts within districts accounting for district level fixed effects. It seems that a disproportionate amount of the decrease in criminal activity occurs in District 1.   
+
+
+# 5. Green building model
+## Overview
+  The goal of this analysis is to estimate the return to investing in green certification. Specifically, we want to estimate the average change in rental per square foot given green certification (LEED or EnergyStar).
+
+## Data and Models
+
+```{r data rev sqft generation train test split, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(rsample) 
+library(randomForest)
+library(lubridate)
+library(modelr)
+library(formattable)
+
+
+green_buildings <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/greenbuildings.csv")
+
+green_buildings = mutate(green_buildings, 
+                         rev_sqft = Rent*leasing_rate)
+green_buildings2 <- na.omit(green_buildings)
+
+green_split = initial_split(green_buildings2, prop = .8)
+green_train = training(green_split)
+green_test =  testing(green_split)
+
+```
+  
+The data we will be using is a collection of 7894 commercial rental properties. In this dataset 685 rentals, or approximately 9% of the properties, are green certified. For this analysis we will only consider if a building has any green certification and not compare between LEED or EnergyStar. Observations with missing values have been omitted. 
+
+```{r Green Models, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+mod1 <- lm(rev_sqft ~ green_rating, data = green_train)
+mod2 <- lm(rev_sqft ~ . - LEED - Energystar - Rent - leasing_rate, data = green_train)
+mod3 <- step(mod2, direction = "both", trace = 0)
+mod4 <- randomForest(rev_sqft ~ . - LEED - Energystar - Rent - leasing_rate,
+                     data = green_train, importance = TRUE)
+
+```
+
+Lets begin with some linear regressions to get a feel of the relevant relationships. Model 1 regresses rent per square foot on green certification. Model 2 regresses rent per square foot on all variables, excluding LEED, EnergyStar, Rent, and leasing_rate. Rent and leasing_rate are being excluded because they are multiplied together to create our dependent variable.   
+
+Models 3 and 4 take a slightly more complex approach. Model 3 uses stepwise selection on Model 2, to arrive a model that relies on less variables. Model 4 uses a Random Forest model to predict the rent per square foot. 
+
+### Model 3
+$rev sqft = CS PropertyID + cluster + size + age + 
+    class a + class b + green rating + net + amenities + hd total07 + 
+    Electricity Costs + City Market Rent$ 
+    
+## Results
+
+### RMSE Table
+```{r RMSE Table,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+library(gt)
+rmse_out<- data_frame("Model 1" = modelr::rmse(mod1, green_test), 
+                      "Model 2" = modelr::rmse(mod2, green_test), 
+                      "Model 3" = modelr::rmse(mod3, green_test), 
+                      "Model 4" = modelr::rmse(mod4, green_test))
+rmse_out
+```
+
+The above table shows that Model 4 has the best performance of our candidate models. As a result, we will rely on it's prediction to estimate the impact of green ratings on rent per square foot. 
+
+
+```{r 3 Output, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+plot(mod4, main = "Model 4 Error over Number of Trees")
+```
+
+This plot is showing that error is minimized at approximately 400 trees.  
+
+```{r 1 Output, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+varImpPlot(mod4, type = 1, main = "Variable Importance Plot")
+```
+
+The variable importance plot gives an indication of how useful each variable is for prediction. Interestingly enough, green_rating does not appear to be highly impactful on revenue per square foot in this dataset. That said the partial importance plot shows the average increase in revenue given green certification. On average, buildings with a green certification generate $60 per square foot more in rent then those without a certification. 
+
+```{r 2 Output, message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+partialPlot(mod4, green_test, "green_rating", las =1)
+```
+
+## Conclusion
+On average, buildings with a green certification generate $60 per square foot more in rent then those without a certification. That said, green_rating does not appear to be as impactful as other variables in our model. The age and size of the property seem to have a higher predicting power for the revenue per square foot. 
+
+
+# 6. California Housing Model
+## Overview
+Below is a predictive model for the median house value for the state of California utilizing a random forest. 
+```{r data libraries,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+library(ggmap)
+library(tidyverse)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(rsample) 
+library(randomForest)
+library(lubridate)
+library(modelr)
+library(formattable)
+
+ca_housing <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/CAhousing.csv")
+
+ca_housing <- ca_housing %>%
+  mutate(avg_rooms = totalRooms/households, 
+         avg_beds = totalBedrooms/households,
+         log_hv = log(medianHouseValue))
+
+```
+
+
+## Data and Model
+Our data is census tract level with over 20000 observations. I began with three simple models using linear regression, stepwise selection, and random forest. Out of of those three, the random forest model performed the best. I then decided to run another random forest model, but only using the variables identified through stepwise selection. This was my best performing model and my choice for moving forward. 
+
+```{r Model testing,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+ca_split = initial_split(ca_housing, prop = .8)
+ca_train = training(ca_split)
+ca_test = testing(ca_split)
+
+
+ca_regress = lm(log_hv ~ . - totalRooms - totalBedrooms - medianHouseValue, data = ca_train)
+ca_step <- step(ca_regress, direction = "both", trace = 0)
+ca_forest = randomForest(log_hv ~ . - totalRooms - totalBedrooms - medianHouseValue, data = ca_train, importance = TRUE)
+ca_forest2 = randomForest(log_hv ~longitude + latitude + housingMedianAge + 
+    totalRooms + totalBedrooms + population + households + medianIncome + 
+    avg_rooms + avg_beds, data = ca_train, importance = TRUE)
+
+
+```
+
+```{r rmse outputs,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+rmse_2<- data_frame("Random Forest2" = modelr::rmse(ca_forest2, ca_test),
+                    "Random Forest" = modelr::rmse(ca_forest, ca_test), 
+                    "Regression Model" = modelr::rmse(ca_regress, ca_test), 
+                    "Stepwise Selection" = modelr::rmse(ca_step, ca_test))
+rmse_2
+
+```
+
+
+## Results
+This data bears out the conventional wisdom about a large proportion of the factors that largely impact local home value. The most used variables in our random forest are median income, the age of the home, and location (lat, long).
+```{r RF output,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+forest_pred <- predict(ca_forest, data = ca_test)
+pred_vals <- data.frame(cbind("latitude" = ca_housing$latitude, "longitude" = ca_housing$longitude, forest_pred, "log_pred" = log(forest_pred), "log_resid" = log(ca_forest2$mse)))
+varImpPlot(ca_forest2, type = 1)
+```
+
+
+The locational impacts on home value can be seen on the map titled "Real Home Values". As you move east to west towards the pacific ocean, home values in the state California tend to increase. This makes sense given that a high income earners are concentrated in coastal cities and the desirability of living on or near the ocean. 
+```{r CA map load, libraries,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+library(maps)
+library(ggplot2)
+library(ggmap)
+library(ggthemes)
+california <- get_stamenmap(
+  bbox = c(left = -124.783, bottom = 32.565, right = -114.038, top = 42.098),
+  maptype = "terrain" , 
+  zoom = 6
+)
+```
+
+```{r map plots,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+
+#real home value 
+actual_hv <- ggmap(california) + 
+  geom_point(data = ca_housing, 
+             aes(x = longitude, y = latitude, color = log_hv), 
+             size = .3) + 
+  scale_color_viridis_c(option = "magma") + 
+  labs(
+    title = "Real Home Values",
+    x="Longitude",
+    y="Latitude"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+actual_hv
+
+#predicted home value
+pred_hv <- ggmap(california) + 
+  geom_point(data = pred_vals, 
+             aes(x = longitude, y = latitude, color = log_pred), 
+             size = .3) + 
+  scale_color_viridis_c(option = "magma") +
+  labs(
+    title = "Predicted Home Values",
+    x="Longitude",
+    y="Latitude"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+pred_hv
+
+
+mse_plot <- ggmap(california) + 
+  geom_point(data = pred_vals, 
+             aes(x = longitude, y = latitude, color = log_resid), 
+             size = .3) +
+  labs(
+    title = "Log Residuals",
+    x="Longitude",
+    y="Latitude"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+mse_plot
+```
+
+
+## Conclusion
+Home values generally increase as you move towards the Pacific ocean. 
