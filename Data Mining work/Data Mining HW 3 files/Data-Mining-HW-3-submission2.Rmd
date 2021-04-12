@@ -212,7 +212,7 @@ pred_hv <- ggmap(california) +
     y="Latitude"
   ) +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
-pred_hv
+
 
 
 mse_plot <- ggmap(california) + 
@@ -225,6 +225,12 @@ mse_plot <- ggmap(california) +
     y="Latitude"
   ) +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") 
+
+```
+```{r map plots2,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
+pred_hv
+```
+```{r map plots 3,  message=FALSE, warning=FALSE, echo=FALSE, error=FALSE}
 mse_plot
 ```
 
