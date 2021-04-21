@@ -8,23 +8,108 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r mixtape SC walkthrough, error=FALSE, message=FALSE, echo=FALSE, warning=FALSE}
+# synth 1 
+library(tidyverse)
+library(haven)
+library(Synth)
+library(devtools)
+if(!require(SCtools)) devtools::install_github("bcastanho/SCtools")
+library(SCtools)
 
-## R Markdown
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+texas <- read_data("texas.dta") %>%
+  as.data.frame(.)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+dataprep_out <- dataprep(
+  foo = texas,
+  predictors = c("poverty", "income"),
+  predictors.op = "mean",
+  time.predictors.prior = 1985:1993,
+  special.predictors = list(
+    list("bmprison", c(1988, 1990:1992), "mean"),
+    list("alcohol", 1990, "mean"),
+    list("aidscapita", 1990:1991, "mean"),
+    list("black", 1990:1992, "mean"),
+    list("perc1519", 1990, "mean")),
+  dependent = "bmprison",
+  unit.variable = "statefip",
+  unit.names.variable = "state",
+  time.variable = "year",
+  treatment.identifier = 48,
+  controls.identifier = c(1,2,4:6,8:13,15:42,44:47,49:51,53:56),
+  time.optimize.ssr = 1985:1993,
+  time.plot = 1985:2000
+)
+?dataprep
+synth_out <- synth(data.prep.obj = dataprep_out)
 
-```{r cars}
-summary(cars)
+path.plot(synth_out, dataprep_out)
+
+
+
+##synth 2 
+gaps.plot(synth_out, dataprep_out)
+?gaps.plot
+
+
+# synth 3 
+
+
+placebos <- generate.placebos(dataprep_out, synth_out, Sigf.ipop = 3)
+
+plot_placebos(placebos)
+
+
+mspe.plot(placebos, discard.extreme = TRUE, mspe.limit = 1, plot.hist = TRUE)
+
 ```
 
-## Including Plots
+```{r Libraries and Data Prep, error=FALSE, message=FALSE, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(haven)
+library(Synth)
+library(devtools)
+if(!require(SCtools)) devtools::install_github("bcastanho/SCtools")
+library(SCtools)
+library(dplyr)
 
-You can also embed plots, for example:
+# data read in 
+teen_preg <- read.csv("https://raw.githubusercontent.com/patrick-chase/Hello-World/main/Causal%20Inference%20Working%20Folder/NCHS_-_U.S._and_State_Trends_on_Teen_Births.csv")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
+
+texas <- read_data("texas.dta") %>%
+  as.data.frame(.)
+
+# Filtering data sets for 1990-2000 and focusing on all teenagers (Age.Group..Years == "18-19 years")
+teen_preg <- teen_preg %>%
+  filter(Year >= 1990, Year <= 2000) 
+  
+teen_preg <- subset(teen_preg, State != "Total U.S." & Age.Group..Years. != "15-17 years" & Age.Group..Years. != "18-19 years")
+
+texas <- texas %>%
+  filter(year >= 1990, year <= 2000)
+
+#merging data sets
+
+
+
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
