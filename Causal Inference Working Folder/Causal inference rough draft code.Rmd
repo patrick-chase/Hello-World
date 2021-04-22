@@ -8,6 +8,15 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+In this project we are looking at the impact of prison expansion on teenage pregnancy and live birth rate. Specifically , we are focusing on Texas state prison expansion during 1993 and early 2000 implemented by governor Ann Richards that tripled the size of the states prison system. Texas sudden prison boom had a major  consequence – state’s prison population more than doubled in five years. It would be reasonable to assume that since many young men, especially young black men  were incarcerated, teen fertility would drop due to imbalance in sex ratio. The goal of this paper is to determine if there is a causal relationship between the spike of incarceration rate among juveniles and teen pregnancy and live birth rate. We would expect this relationship to be negative, in order to evaluate this we are using synthetic controls. The advantage of using SCM is it looks like the treated case in key metrics in terms of the prior covariates and other post outcome predictors, thus it gives us apples to apples comparison. 
+
+ 
+ 
+In order to implement the SCM, we will be using references and corresponding r codes from Abadie’s (2003) results that examines terrorism effects on economic output in Basque County, Spain. <https://www.aeaweb.org/articles?id=10.1257/000282803321455188>.
+
+
+
 ```{r mixtape SC walkthrough, error=FALSE, message=FALSE, echo=FALSE, warning=FALSE}
 # synth 1 
 library(tidyverse)
