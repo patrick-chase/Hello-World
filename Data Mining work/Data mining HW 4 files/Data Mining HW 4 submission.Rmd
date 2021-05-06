@@ -1,0 +1,164 @@
+---
+title: "Data Mining HW 4 Submission"
+author: "Patrick Chase"
+date: "5/3/2021"
+output: pdf_document
+---
+message=FALSE, warning=FALSE, echo=FALSE, error=TRUE
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+
+```
+
+
+
+# 1. 
+```{r Wine read in, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+wine <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/wine.csv")
+
+
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(randomForest)
+library(splines)
+library(pdp)
+library(rsample)
+library(modelr)
+ 
+wine <- wine %>%
+  mutate(color = as.factor(color)) 
+
+wine$is_red = ifelse(wine$color=="red", 1, 0)
+
+wine2 <- subset(wine, select = -c(color))
+
+wine_scaled <- scale(wine2)
+
+
+
+```
+
+```{r Principal component identification and data manage, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+pca_wine = prcomp(wine[c(1:11)], rank = 30, scale = TRUE)
+summary(pca_wine)
+
+wine_combined = data.frame(wine, 
+                          pca_wine$x)
+
+wine_split = initial_split(wine_combined, prop = .8)
+wine_train = training(wine_split)
+wine_test =  testing(wine_split)
+```
+PCA 1 through PCA 9 capture more than 95% of the variability in our data set. I'll rely on only those for my PCA model. 
+
+```{r PCA models predicting color and quality, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+#red model 
+pca_glm_red <- glm(is_red ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9, data = wine_train, family = binomial(link = "logit") )
+
+pca_predict_red <- predict(pca_glm_red, wine_test)
+
+## red confusion mtx and rmse 
+tab_is_red = table(pca_predict_red > .5, wine_test$is_red)
+pca_red_accuracy <- sum(diag(tab_is_red))/sum(tab_is_red)*100
+rmse_pca_red <- modelr::rmse(pca_glm_red, wine_test)
+
+
+# quality model 
+pca_lm_qual <- glm(quality ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9, data = wine_train, family = gaussian)
+?glm
+pca_predict_qual <- predict(pca_lm_qual, wine_test)
+
+
+## quality confusion mtx and rmse 
+tab_qual = table(pca_predict_qual > .5, wine_test$quality)
+pca_qual_accuracy <- sum(diag(tab_qual))/sum(tab_qual)*100
+rmse_pca_qual <- modelr::rmse(pca_lm_qual, wine_test)
+
+
+```
+
+
+```{r k-means clustering, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering algorithms & visualization
+
+test <- subset(wine_scaled, select = c(fixed.acidity, residual.sugar))
+testcluster <- kmeans(test, centers = 2, nstart = 25)
+red_cluster_viz <- fviz_cluster(testcluster, data = test)
+cluster_tab = table(testcluster$cluster, wine$is_red)
+cluster_redl_accuracy <- sum(diag(cluster_tab))/sum(cluster_tab)*100
+
+test2 <- subset(wine_scaled, select = c(1:10))
+testcluster2 <- kmeans(test2, centers = 10, nstart = 25)
+qual_cluster_viz <- fviz_cluster(testcluster2, data = test2)
+cluster_tab2 = table(testcluster2$cluster, wine$quality)
+cluster_qual_accuracy <- sum(diag(cluster_tab2))/sum(cluster_tab2)*100
+
+
+
+```
+
+
+# 2. 
+```{r data read in , message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+install.packages("rstatix")
+library(rstatix)
+marketing <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/social_marketing.csv")
+
+marketing.subset <- marketing %>% 
+  subset(select = -c(1)) %>%
+  data.frame(lapply(marketing, function(x) as.numeric(as.character(x))))
+
+counts <- marketing.subset %>%
+  summarise(n=n()) %>%
+  mutate(freq = n/sum(n))
+
+
+frequencies <- marketing %>%
+  freq_table(chatter,current_events,travel,photo_sharing,uncategorized,tv_film,sports_fandom,politics,food,family,home_and_garden,music,news,online_gaming,shopping,health_nutrition,college_uni,sports_playing,cooking,eco,computers,business,outdoors,crafts,automotive,art,religion,beauty,parenting,dating,school,personal_fitness,fashion,small_business,spam,adult)
+
+att <- marketing %>%
+  group_by_all(!X) %>%
+  summarize(n= n()) %>%
+  mutate(freq = prop.table(n))
+
+
+
+
+table(table)
+
+
+mkt_scale <- scale(marketing, center = TRUE, scale = TRUE)
+
+
+
+mkt_dist_mtx <- dist(mkt_scale, method = 'euclidean')
+
+mkt_heirarchy <- hclust(mkt_dist_mtx, method = 'average')
+
+plot(mkt_heirarchy, cex=.8)
+
+cluster1 = cutree(mkt_heirarchy, k = 5)
+plot
+
+mu = attr(mkt_scale, "scaled:center")
+sigma = attr(mkt_scale, "scaled:scale")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
