@@ -2,7 +2,9 @@
 title: "Data Mining HW 4 Submission"
 author: "Patrick Chase"
 date: "5/3/2021"
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 message=FALSE, warning=FALSE, echo=FALSE, error=TRUE
 
@@ -68,7 +70,7 @@ rmse_pca_red <- modelr::rmse(pca_glm_red, wine_test)
 
 # quality model 
 pca_lm_qual <- glm(quality ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9, data = wine_train, family = gaussian)
-?glm
+
 pca_predict_qual <- predict(pca_lm_qual, wine_test)
 
 
@@ -79,7 +81,6 @@ rmse_pca_qual <- modelr::rmse(pca_lm_qual, wine_test)
 
 
 ```
-
 
 ```{r k-means clustering, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 library(tidyverse)  # data manipulation
@@ -102,63 +103,234 @@ cluster_qual_accuracy <- sum(diag(cluster_tab2))/sum(cluster_tab2)*100
 
 ```
 
+```{r accuracy data frame, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+Accuracy <- data_frame("pca_red_accuracy" = pca_red_accuracy,
+                       "rmse_pca_red" = rmse_pca_red, 
+                       "pca_qual_accuracy" = pca_qual_accuracy, 
+                       "rmse_pca_qual" = rmse_pca_qual, 
+                       "cluster_redl_accuracy" = cluster_redl_accuracy, 
+                       "cluster_qual_accuracy" = cluster_qual_accuracy)
+  
+  
+  
+Accuracy
+```
+
+For this specific task, I think PCA makes a lot more sense, particularly for the binary classification between red and white where I can achieve accuracy of 98%. My PCA model estimating quality is just barely wasn't particularly good. As far as I can tell, the K-means models aren't outputting information that is practically useful. I'm not sure if that's because I made a mistake or if there is something else going on. 
 
 # 2. 
 ```{r data read in , message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
 install.packages("rstatix")
 library(rstatix)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+
 marketing <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/social_marketing.csv")
 
 marketing.subset <- marketing %>% 
   subset(select = -c(1)) %>%
   data.frame(lapply(marketing, function(x) as.numeric(as.character(x))))
 
-counts <- marketing.subset %>%
-  summarise(n=n()) %>%
-  mutate(freq = n/sum(n))
+mkt_info <- marketing %>%
+  summarize_if(is.numeric, sum, na.rm=TRUE) %>%
+  sort(decreasing = TRUE) 
+
+info_conv <- as.data.frame(t(mkt_info)) %>%
+  mutate(percent = V1/325802*100)
+info_conv$names <- row.names(info_conv)  
+
+info_conv_subset <- info_conv %>% 
+  arrange(percent)%>%
+  subset(percent >= 3.35) %>%
+  subset(names != "chatter")
 
 
-frequencies <- marketing %>%
-  freq_table(chatter,current_events,travel,photo_sharing,uncategorized,tv_film,sports_fandom,politics,food,family,home_and_garden,music,news,online_gaming,shopping,health_nutrition,college_uni,sports_playing,cooking,eco,computers,business,outdoors,crafts,automotive,art,religion,beauty,parenting,dating,school,personal_fitness,fashion,small_business,spam,adult)
+g1 <- ggplot(data = info_conv) + 
+  geom_col(mapping = aes(x = names, y = percent)) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Category Percent of Total")+
+  theme(plot.title = element_text(hjust = 0.5)) 
 
-att <- marketing %>%
-  group_by_all(!X) %>%
-  summarize(n= n()) %>%
-  mutate(freq = prop.table(n))
-
-
-
-
-table(table)
-
-
-mkt_scale <- scale(marketing, center = TRUE, scale = TRUE)
+g2 <- ggplot(data = info_conv_subset) + 
+  geom_col(mapping = aes(x = names, y = percent)) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 Categories minus Chatter")+
+  theme(plot.title = element_text(hjust = 0.5)) 
 
 
 
-mkt_dist_mtx <- dist(mkt_scale, method = 'euclidean')
+marketing.subset2 <- subset(marketing, select = c(shopping, food, personal_fitness, current_events, college_uni, travel, sports_fandom, politics, cooking, health_nutrition, photo_sharing))
 
-mkt_heirarchy <- hclust(mkt_dist_mtx, method = 'average')
 
-plot(mkt_heirarchy, cex=.8)
 
-cluster1 = cutree(mkt_heirarchy, k = 5)
-plot
 
-mu = attr(mkt_scale, "scaled:center")
-sigma = attr(mkt_scale, "scaled:scale")
+
+marketing.subset2 <- subset(marketing.subset2, select = -c(X, chatter))
+  
+cor_mtx <- round(cor(marketing.subset2), 2)
+
+
+
+```
+
+```{r g1 , message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+g1 
+```
+This first graph is showing the percentage breakdown for each category in our data set. Let's take a closer look by focusing on the top 10 categories removing chatter as it is not substantively useful. 
+
+```{r g2,message=FALSE, warning=FALSE, echo=FALSE, error=TRUE }
+g2
+```
+
+NutrientH20's social media followers seem to be focused on a typical range of what many consumers on twitter are. That said, a point of interest is the relatively large proportion that is related to food in general, when we aggregate between cooking, food, and health_nutrition. This in combination with the large share of photo_sharing gives us an idea of what some followers may be interested. The market segment in this case would be foodies who enjoy sharing their food endevours with their friends through twitter. This could point to a marketing strategy of engaging with chefs turned social media influencers. This would expand reach and give NutrientH20's consumers what they are interested. 
+
+
+
+# 3. 
+
+
+```{r 3 read in and rule generation, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+library(tidyverse)
+library(arules)  # has a big ecosystem of packages built around it
+library(arulesViz)
+library(igraph)
+library(widyr)
+library(ggraph)
+library(readr)
+library(data.table)
+library(stringr)
+
+groceries_raw <- read.transactions("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/groceries.txt", format = c("basket"), rm.duplicates = TRUE)
+
+
+
+grocery_rules = apriori(groceries_raw, 
+                        parameter=list(support=.005, confidence=.15, minlen = 2, maxlen=2))
+plot(grocery_rules, 
+     measure = c("support", "lift"),
+     shading = "confidence")
+
+
+
+
+```
+I chose a low level for support because I don't think a grocer would be particularly interested in focusing on products that all of their customers already buy. My threshhold for confidence was 15% because I think it would be more useufl to show associations of products in order to inform store organization. I decided to subset my rules to focus on those with the highest confidence in the graphic below. 
+
+
+```{r more arule plots, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+subrules <- head(sort(grocery_rules, by = "confidence"), 30)
+plot.2 <- plot(subrules, method = "graph", control = list(type="items"))
+
+```
+This graphic shows rules that seem to follow the typical organization of a grocery store. Dairy products are largely purchased in tandem with each other, and most customers seem to be getting whole vegetables along with many other products. 
+
+
+# 4. 
+```{r corpus construction code ,message=FALSE, warning=FALSE, echo=FALSE, error=TRUE }
+library(tidyverse)
+library(tm)
+library(gamlr)
+library(SnowballC)
+library("quanteda")
+library(methods)
+
+readerPlain = function(fname){
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') }
+
+
+train_dirs = Sys.glob('/Users/patrickchase/Desktop/GitHub/ECO395M/data/ReutersC50/C50train/*')
+train_dirs = train_dirs[c(43, 47)]
+file_list = NULL
+labels_train = NULL
+for(author in train_dirs) {
+	author_name = substring(author, first=29)
+	files_to_add = Sys.glob(paste0(author, '/*.txt'))
+	file_list = append(file_list, files_to_add)
+	labels_train = append(labels_train, rep(author_name, length(files_to_add)))
+}
+
+corpus_train = Corpus(DirSource(train_dirs)) 
+
+corpus_train = corpus_train %>% tm_map(., content_transformer(tolower)) %>% 
+        tm_map(., content_transformer(removeNumbers)) %>% 
+				tm_map(., content_transformer(removeNumbers)) %>% 
+				tm_map(., content_transformer(removePunctuation)) %>%
+				tm_map(., content_transformer(stripWhitespace)) %>%
+				tm_map(., content_transformer(removeWords), stopwords("SMART"))
+
+
+
+test_dirs = Sys.glob('~/Desktop/GitHub/ECO395M/data/ReutersC50/C50test/*')
+test_dirs = test_dirs[c(43, 47)]
+file_list = NULL
+labels_test = NULL
+for(author in test_dirs) {
+	author_name = substring(author, first=28)
+	files_to_add = Sys.glob(paste0(author, '/*.txt'))
+	file_list = append(file_list, files_to_add)
+	labels_test = append(labels_test, rep(author_name, length(files_to_add)))
+}
+
+
+corpus_test = Corpus(DirSource(test_dirs)) 
+
+corpus_test = corpus_test %>% tm_map(., content_transformer(tolower)) %>% 
+				tm_map(., content_transformer(removeNumbers)) %>% 
+				tm_map(., content_transformer(removePunctuation)) %>%
+				tm_map(., content_transformer(stripWhitespace)) %>%
+				tm_map(., content_transformer(removeWords), stopwords("SMART")) 
+
 
 
 ```
 
 
+For my data cleaning procedure I basically followed you're work exactly. And even with that I struggled to transition it to a usable format where I could use the principal components I identified to build a classification model. That said, I had intended to build a model where I'd focus on classifying the work of one Mure Dickie. I imported the Document Term Matrix into a normal matrix and normalized it. I had intended to use my PCs as variables in a logit model, with the outcome variable being Author == "MureDickie". I suspect my classification may have been alright, although probably not great. My issue, ultimately was a data processing one. I was ultimately able to get my model to run, but I have no idea what the accuracy of it is. 
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, error=TRUE}
+
+library(irlba)
+library(tidyverse)
+library(scales)
+library(broom)
+library(glmnet)
+library(dplyr)
+library(tidyr)
+library(caret)
+library(nnet)
+
+
+DTM_train = DocumentTermMatrix(corpus_train)
+
+DTM_test = DocumentTermMatrix(corpus_test, control = list(dictionary=Terms(DTM_train)))
+
+
+dtm_train2 <- as.matrix(DTM_train)
+dtm_test2 <- as.matrix(DTM_test)
 
 
 
+dtm_norm_train <- t(apply(dtm_train2, 1, function(x) x/sqrt(sum(x^2))))
+dtm_norm_test <- t(apply(DTM_test, 1, function(x) x/sqrt(sum(x^2))))
+
+pca_identify <- prcomp_irlba(dtm_norm_train, n=90)
+pca_actual <- prcomp_irlba(dtm_norm_train, n=64, scale = TRUE)
 
 
 
+pca_in <- data.frame(pca_actual$x)
+pca_in <- na.omit(pca_in)
+
+y_train = 0 + {labels_train=='MureDickie'}
+
+#model specification 
+glm1 = glm(y_train ~ . , data = pca_in, family = "binomial" )
 
 
+rmse_glm1 <- modelr::rmse(glm1, dtm_norm_test)
 
+```
 
