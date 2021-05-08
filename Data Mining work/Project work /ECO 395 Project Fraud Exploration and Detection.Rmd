@@ -11,12 +11,33 @@ knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE, 
                       warning = FALSE)
 ```
-# Intro and Data Overview
+# Abstract
+The problem I'd like to solve is the identification of credit card fraud for a leading payment service company, Vesta Corporation, who specializes in guaranteeing card-not-present (CNP) transactions. Vesta partnered with IEEE Computation Intelligence Society in hosting a competition on Kaggle with a real world data set. The goal was simple. Create the most effective classification model to identify whether or not a transaction is fraudulent. While the competition is closed, I think this particular problem and rich data set provide a real world opportunity to demonstrate the skills I've attained in this class. 
 
-```{r data load and sampling}
+
+# Introduction
+Fraud detection has been a persistent problem since the widespread the use of non-cash payment systems became popular in the mid 1990s. Given the regulatory environment of the United States and the massive increase in the amount of transactions, corporations have a large incentive to prevent fraud in real time. These circumstances present a ripe environment for automation through the use of machine learning, which has been relatively common. Banks, payment processors, and tech companies such as Apple, Amazon, and Microsoft devote copious resources to the development of automated fraud detection systems. 
+
+Despite those efforts, billions of dollars are lost each year due to fraud in a diverse range of fields. Bad actors and corporations are in a constant arms race when it comes to fraudulent activity. Whether it's Facebook attempting to detect fraudulent ad buys on their site or a payment processor such as Vesta preventing fraud from occurring at the transaction level, being able to effectively detect and prevent fraud is in the interest of businesses and consumers. While potentially relatively simple, automated fraud detection through machine learning present an easy avenue into the use of algorithms for a typical business.  
+
+# Methods
+
+## Data
+The [*data sets*](https://www.kaggle.com/c/ieee-fraud-detection/data) used in this analysis was found through a Google search of "fraud detection data sets". 
+
+
+
+
+First and foremost, a few circumstances forced me to select a random sample of the provided training and test [data sets](https://www.kaggle.com/c/ieee-fraud-detection/data). The main issue was the fact that I did not have enough memory on my machine to effectively analyze it locally. The second issue was the fact that Github limits the file sizes to 100MB. My preference is to upload my data sets to Github and reference the raw format of those so it isn't necessary to download 
+
+
+
+So, I begin with a simple exploration of the data and identification of some existing relationships that are easily apparent. Then I construct principal components that are used for a logit model to classify the variable of interest, isFraud. 
+
+```{r data sampling}
 # link to original data - https://www.kaggle.com/c/ieee-fraud-detection/data 
-# I chose to sample these files for two reasons. The first is that Github has limits on the size of the repository, and I wanted to make running my code relatively easy. The second is I'm operating with limited system. A small sample sped up processing times on my system. If one wanted to replicate this work with the full files you could skip this chunk and work direclty with the full files. 
-install.packages("dplyr")
+# I chose to sample these files for two reasons. The first is that Github has limits on the size of the repository, and I wanted to make running my code relatively easy. The second is I'm operating with limited system. A small sample sped up processing times on my system. If one wanted to replicate this work with the full files you could skip this chunk and work directly with the full files. 
+
 library(readr)
 library(dplyr)
 ## Training data set merge and sampling
@@ -29,11 +50,15 @@ fraud_train_full <- merge(train_transaction, train_identity, by ="TransactionID"
 
 fraud_train_sample <- sample_frac(fraud_train_full, size = .2, replace = FALSE)
 
-write.csv(fraud_train_sample, "~/Desktop/fraud_train_sample", row.names = TRUE)
+write.csv(fraud_train_sample, "~/Desktop/fraud_train_sample.csv", row.names = TRUE)
 
 
-
+fraud_train_sample <- read_csv("~/Desktop/fraud_train_sample.csv")
 
 
 ```
+
+#Methods
+#Results
+#Conclusion
 
