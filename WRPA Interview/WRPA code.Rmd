@@ -14,8 +14,10 @@ knitr::opts_chunk$set(echo = TRUE,
 
 
 ```{r data load}
+##if you're looking to replicate my work, you'll need to download the WRPA Data file from my Github repository and load it into RStudio (https://github.com/patrick-chase/Hello-World/blob/main/WRPA%20Interview/WRPA%20Data.xlsx)
+
 library(readxl)
-wrpa.data <- read_excel("~/Desktop/Desktop Folder/Job Stuff/OFM Interview Prep /WRPA Data.xlsx")
+wrpa.data <- read_excel("~/Desktop/GitHub/My files/Hello-World/WRPA Interview/WRPA Data.xlsx")
 
 
 ##likert-scaled data and demographic data 
