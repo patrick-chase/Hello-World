@@ -1,0 +1,353 @@
+---
+title: "WRPA Interview"
+author: "Patrick Chase"
+date: "5/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message=FALSE, 
+                      warning=FALSE,
+                      error=TRUE)
+```
+
+
+```{r data load}
+library(readxl)
+wrpa.data <- read_excel("~/Desktop/Desktop Folder/Job Stuff/OFM Interview Prep /WRPA Data.xlsx")
+
+
+##likert-scaled data and demographic data 
+
+
+
+library(knitr)
+library(lattice)             
+library(tidyverse)
+library(likert) 
+library(MASS)
+library(psych)
+library(viridis)
+library(wesanderson)
+library(ggforce)
+library(scales)
+library(ggplot2)
+
+clrs3 <- c("firebrick4",  "gray70", "darkblue")
+clrs5 <- c("firebrick4", "firebrick1", "gray70", "blue", "darkblue")
+clrs4 <- c("firebrick4", "firebrick1", "gray70", "blue")
+
+```
+
+```{r data clean}
+library(stringr)
+library(dplyr)
+#renamed variables 1 through 8 in new excel file then imported into R. See original spreadsheet with instructions to view questions
+clean <- wrpa.data 
+
+## string removal q1 through q8   
+clean$q1 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q1)
+
+clean$q2 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q2)
+
+clean$q3 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q3)
+
+clean$q4 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q4)     
+
+clean$q5 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q5)
+
+clean$q6 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q6)
+
+clean$q7 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q7)
+
+clean$q8 <- gsub(" - Never or Almost Never| - Seldom| - Occasionally| - Usually| - Almost Always or Always", "", clean$q8)
+
+## convert variables to factor 
+names <- names(clean)
+clean[,names] <- lapply(clean[,names], factor)
+na.omit(clean)
+
+levels(clean$gender)
+labels <- c("Never or Almost Never", "Seldom", "Occasionally", "Usually", "Almost Always or Always")
+library(naniar)
+
+string <- c("Prefer not to say")
+
+clean_test <- replace_with_na_all(clean, condition = ~.x %in% c("Prefer not to say"))
+clean_test<- na.omit(clean_test)
+```
+
+```{r total satisfaction bar plot}
+
+# q8 Total Satisfaction data frame
+sat_data <- clean %>%
+  group_by(q8) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q8, 
+                      levels = 1:5, 
+                      labels = labels)) 
+sat_data$Percent <-  sat_data$Frequency/sum(sat_data$Frequency)*100 
+sat_data$Percent <- format(round(sat_data$Percent, 1), nsmall =0)
+
+
+sat_bar <-ggplot(sat_data) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs5) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "In general, I'm satisfied with my job") 
+
+sat_bar 
+```
+
+```{r gender satisfaction}
+sat_gender <- clean %>%
+  group_by(q8, gender) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q8, 
+                      levels = 1:5, 
+                      labels = labels)) 
+sat_gender$Percent <-  sat_gender$Frequency/sum(sat_gender$Frequency)*100 
+sat_gender$Percent <- format(round(sat_gender$Percent, 1), nsmall =0)
+
+
+gender_test <- ggplot(sat_gender) + 
+  geom_col(mapping = aes(x = Satisfaction, y = Percent, fill = gender), position = "dodge")+
+  theme_bw() + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "In general, I'm satisfied with my job") 
+gender_test
+
+
+
+
+
+
+```
+
+```{r pie satisfaction by agency }
+
+# q8 satisfaction by agency data frame and pie graph
+agency_sat <- clean %>%
+  group_by(agency, q8) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q8, 
+                               levels = 1:5, 
+                               labels = labels),
+         Percent = round(Frequency/sum(Frequency)*100, 1)) %>%
+  arrange(desc(Satisfaction)) %>%    
+  mutate(Position = cumsum(Frequency)- .5*Frequency)
+
+## pie graph by agency
+agency_pie <- ggplot(agency_sat, aes("", Percent, fill = factor(Satisfaction)), label = percent(Percent)) +
+  facet_wrap(~agency) +
+  geom_col(position = 'stack', width=1, color="white") +
+  geom_text(aes(label = Percent, ),position = position_stack(vjust = .5), check_overlap = F, size = 6) +
+  theme_classic() +
+  theme(plot.title = element_text(hjust=0.5, size = 20),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(), 
+        strip.text = element_text(size=18),
+        legend.key.size = unit(2, "cm"), 
+        legend.text = element_text(size = 15)) + 
+  labs(fill = "Satisfaction", 
+       x = NULL, 
+       y = NULL, 
+       title = "'In general, I'm satisfied with my job' by agency") + 
+  coord_polar("y")
+agency_pie 
+```
+
+```{r DWM plots}
+##making question histogram for DWM, select data follow earlier work flow 
+# q1 
+DWM_q1 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q1) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q1, 
+                      levels = 1:5, 
+                      labels = labels))
+always <- data.frame(5, 0, "Almost Always or Always")
+names(always) <- c("q1", "Frequency", "Satisfaction")
+#DWM_q1 <- rbind(always, DWM_q1)
+DWM_q1$Percent <-  DWM_q1$Frequency/sum(DWM_q1$Frequency)*100 
+DWM_q1$Percent <- format(round(DWM_q1$Percent, 1), nsmall =0)
+#DWM_q1$q1 <- as.numeric(DWM_q1$q1)
+#DWM_q1 <- arrange(DWM_q1$q1)
+
+q1_bar <-ggplot(DWM_q1) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs4) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = " A spirit of cooperation and teamwork exists in my work group") 
+
+q1_bar
+
+#q2
+
+DWM_q2 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q2) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q2, 
+                      levels = 1:5, 
+                      labels = labels)) 
+DWM_q2$Percent <-  DWM_q2$Frequency/sum(DWM_q2$Frequency)*100 
+DWM_q2$Percent <- format(round(DWM_q2$Percent, 1), nsmall =0)
+
+q2_bar <-ggplot(DWM_q2) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs5) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "I know how my agency measures its success") 
+
+q2_bar
+
+# q3
+DWM_q3 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q3) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q3, 
+                      levels = 1:5, 
+                      labels = labels)) 
+always <- data.frame(0, 0, 4)
+names(always) <- c("q1", "Frequency", "Satisfaction")
+#DWM_q3 <- rbind(always, DWM_q3)
+DWM_q3$Percent <-  DWM_q3$Frequency/sum(DWM_q3$Frequency)*100 
+DWM_q3$Percent <- format(round(DWM_q3$Percent, 1), nsmall =0)
+
+q3_bar <-ggplot(DWM_q3) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs4) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "My agency supports a diverse workforce") 
+q3_bar
+
+#q4 
+DWM_q4 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q4) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q4, 
+                      levels = 1:5, 
+                      labels = labels)) 
+DWM_q4$Percent <-  DWM_q4$Frequency/sum(DWM_q4$Frequency)*100 
+DWM_q4$Percent <- format(round(DWM_q4$Percent, 1), nsmall =0)
+
+q4_bar <-ggplot(DWM_q4) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs5) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "My agency helps me navigate change") 
+q4_bar
+
+#q5 
+DWM_q5 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q5) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q5, 
+                      levels = 1:5, 
+                      labels = labels)) 
+DWM_q5$Percent <-  DWM_q5$Frequency/sum(DWM_q5$Frequency)*100 
+DWM_q5$Percent <- format(round(DWM_q5$Percent, 1), nsmall =0)
+
+q5_bar <-ggplot(DWM_q5) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs5) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "At my job, I have the opportunity to make good use of my skills") 
+q5_bar
+
+
+#q6
+DWM_q6 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q6) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q6, 
+                      levels = 1:5, 
+                      labels = labels)) 
+DWM_q6$Percent <-  DWM_q6$Frequency/sum(DWM_q6$Frequency)*100 
+DWM_q6$Percent <- format(round(DWM_q6$Percent, 1), nsmall =0)
+
+q6_bar <-ggplot(DWM_q6) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs4) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "At my workplace, I feel valued for who I am as a person") 
+q6_bar
+
+#q7 
+DWM_q7 <- clean %>%
+  filter(agency == "Department of Widget Makers")%>%
+  group_by(q7) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q7, 
+                      levels = 1:5, 
+                      labels = labels)) 
+DWM_q7$Percent <-  DWM_q7$Frequency/sum(DWM_q7$Frequency)*100 
+DWM_q7$Percent <- format(round(DWM_q7$Percent, 1), nsmall =0)
+
+q7_bar <-ggplot(DWM_q7) + 
+  geom_col(mapping = aes(y = Percent, x = Satisfaction), fill = clrs4) +
+  theme_bw() +
+  geom_text(aes(y = Percent, x = factor(Satisfaction), label = Percent),vjust=1.6, color = "black"  , size = 8)  + 
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 20)) +
+labs(title = "My agency sets the expectation for inclusion by embedding it in everyday interactions") 
+q7_bar
+
+
+
+
+```
+
+```{r q3 race plot}
+sat_race <- clean %>%
+  filter(agency == "Department of Widget Makers") %>%
+  group_by(q3, race) %>%
+  summarise(Frequency = n()) %>%
+  mutate(Satisfaction = factor(q3, 
+                      levels = 1:5, 
+                      labels = labels)) 
+sat_race$Percent <-  sat_race$Frequency/sum(sat_race$Frequency)*100 
+sat_race$Percent <- format(round(sat_race$Percent, 1), nsmall =0)
+
+
+race_plot <- ggplot(sat_race) + 
+  geom_col(mapping = aes(x = Satisfaction, y = Percent), position = "dodge")+
+  facet_wrap(~race) +
+  theme(plot.title = element_text(size = 20, hjust=.5), 
+        axis.text = element_text(size = 10)) +
+  theme(plot.title = element_text(hjust=0.5, size = 20),
+        strip.text = element_text(size=18),
+        legend.text = element_text(size = 15)) +
+labs(title = "'My agency supports a diverse workforce' by race") 
+race_plot
+
+
+
+
+```
+
+
+
